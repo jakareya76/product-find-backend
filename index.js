@@ -26,8 +26,24 @@ async function run() {
     const productsCollection = database.collection("products");
 
     app.get("/products", async (req, res) => {
-      const result = await productsCollection.find().toArray();
-      res.send(result);
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 5;
+      const skip = (page - 1) * limit;
+
+      const totalProducts = await productsCollection.countDocuments();
+      const totalPages = Math.ceil(totalProducts / limit);
+
+      const products = await productsCollection
+        .find()
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+
+      res.send({
+        products,
+        totalPages,
+        currentPage: page,
+      });
     });
 
     app.post("/products", async (req, res) => {
