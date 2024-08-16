@@ -27,14 +27,20 @@ async function run() {
 
     app.get("/products", async (req, res) => {
       const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 5;
+      const limit = parseInt(req.query.limit) || 10;
       const skip = (page - 1) * limit;
 
-      const totalProducts = await productsCollection.countDocuments();
+      const searchQuery = req.query.search || "";
+
+      const query = searchQuery
+        ? { productName: { $regex: searchQuery, $options: "i" } }
+        : {};
+
+      const totalProducts = await productsCollection.countDocuments(query);
       const totalPages = Math.ceil(totalProducts / limit);
 
       const products = await productsCollection
-        .find()
+        .find(query)
         .skip(skip)
         .limit(limit)
         .toArray();
